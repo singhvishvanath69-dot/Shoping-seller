@@ -1,0 +1,194 @@
+<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Short Buy सेलर</title><meta name="theme-color" content="#0f766e"><link rel="manifest" href="manifest.json"><style>
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{font-family:system-ui,"Noto Sans Devanagari",sans-serif;background:#f3f6f5;color:#12211f;line-height:1.5}
+header{position:sticky;top:0;background:#0f766e;color:#fff;padding:10px 14px;display:flex;gap:8px;align-items:center;z-index:5}
+header h1{font-size:20px;flex:1;font-weight:800}
+input,select,textarea,button{font:inherit;padding:10px;border-radius:8px;border:1px solid #c5d3d0;width:100%;background:#fff}
+input[type=radio],input[type=checkbox]{width:auto}
+label{display:flex;gap:8px;align-items:center}
+button{background:#0f766e;color:#fff;border:0;cursor:pointer}
+button:disabled{background:#9aa9a6}
+button.o{background:#fff;color:#0f766e;border:1px solid #0f766e}
+button.r{background:#b91c1c}
+header button,.sm{width:auto;padding:8px 12px}
+header button{background:#fff;color:#0f766e;font-weight:700}
+main{padding:12px 12px 90px;max-width:900px;margin:auto;display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.c,.box{background:#fff;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1px solid #dbe5e3}
+label.box{flex-direction:row;align-items:flex-start}
+.c img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#e2ebe9}
+.c span{color:#b45309;font-weight:800}
+.c small{color:#4d6360;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.col{display:flex;flex-direction:column;gap:10px}
+#sh{position:fixed;inset:0;background:#0007;display:none;z-index:9}
+#sh>div{background:#fff;margin-top:6vh;height:94vh;border-radius:16px 16px 0 0;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+#sh>div>*{flex-shrink:0}
+.tl{display:flex;gap:2px;font-size:12px;text-align:center}
+.tl span{flex:1;padding:4px 2px;border-top:4px solid #c5d3d0;color:#6b7f7c}
+.tl .on{border-color:#0f766e;color:#0f766e;font-weight:700}
+.tag{font-size:13px;color:#4d6360}
+.pv{width:96px;border-radius:8px;object-fit:cover}
+.ph{display:flex;gap:6px;overflow-x:auto}
+.ph img{height:120px;border-radius:8px}
+.tabs{display:flex;gap:6px;overflow-x:auto}
+.tabs button{width:auto;white-space:nowrap;background:#fff;color:#0f766e;border:1px solid #0f766e}
+.tabs .on{background:#0f766e;color:#fff}
+.fab{position:fixed;right:16px;bottom:20px;width:56px;height:56px;border-radius:50%;font-size:30px;padding:0;box-shadow:0 3px 10px #0004;z-index:6}
+hr{border:0;border-top:1px dashed #9aa9a6}</style></head><body>
+<header><h1><a href="index.html" style="color:inherit;text-decoration:none">🏪 Short Buy सेलर</a></h1><button class="sm" onclick="supportUI()">🆘 सपोर्ट</button><button id="lb" class="sm">लॉगिन</button></header>
+<main>
+<div id="gate" class="box"><b>प्रोडक्ट बेचने के लिए लॉगिन करें</b><button onclick="login()">Google से लॉगिन</button></div>
+<div id="reg" class="box" hidden><b>सेलर खाता बनाएँ</b><input id="rsh" placeholder="दुकान का नाम"><input id="rmb" type="tel" placeholder="मोबाइल नंबर (10 अंक)"><b>दुकान / वापसी (Return) का पूरा पता</b><div id="ra" class="col"></div><b>पेमेंट के लिए बैंक खाता</b><input id="rac" inputmode="numeric" placeholder="A/c नंबर"><input id="rif" placeholder="IFSC कोड"><button onclick="reg()">खाता बनाएँ</button></div>
+<div id="app" hidden><div id="tb" class="tabs"></div><div id="v" class="col" style="margin-top:10px"></div><button class="fab" onclick="addUI()">+</button></div>
+</main>
+<div id="sh"><div id="shc"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyCkblGm-Esda5VbOZYkpQpHsBePhxen8hk",authDomain:"psb-chtting.firebaseapp.com",projectId:"psb-chtting",storageBucket:"psb-chtting.firebasestorage.app",messagingSenderId:"689058791105",appId:"1:689058791105:web:e8a528524c004546415e40",measurementId:"G-F6VW5EGSHL"};
+firebase.initializeApp(firebaseConfig);
+try{firebase.analytics()}catch(e){}
+const db=firebase.firestore(),auth=firebase.auth();
+const $=s=>document.querySelector(s);
+const rs=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const login=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+const ts=t=>t&&t.toDate?t.toDate().toLocaleDateString('hi-IN'):'';
+const arr=s=>s.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>(y.createdAt?.seconds||0)-(x.createdAt?.seconds||0));
+const TL=['नया','पैक हुआ','भेजा गया','डिलीवर हुआ'];
+const tl=o=>o.status=='रद्द'?'<b>❌ रद्द</b>':`<div class="tl">${TL.map((t,k)=>`<span class="${k<=TL.indexOf(o.status)?'on':''}">${t}</span>`).join('')}</div>`;
+const imgs=p=>(p.imgs&&p.imgs.length?p.imgs:[p.img]).filter(Boolean);
+const fmt=a=>[a.vi,a.ci,a.di,a.st,a.pin].filter(Boolean).join(', ');
+const STATES=['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Andaman and Nicobar Islands','Chandigarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Jammu and Kashmir','Ladakh','Lakshadweep','Puducherry'];
+const stOpts=v=>'<option value="">राज्य चुनें</option>'+STATES.map(s=>`<option ${s==v?'selected':''}>${s}</option>`).join('');
+const addrHTML=(p,v={},m=1)=>`${m?`<input id="${p}n" placeholder="नाम" value="${esc(v.n)}"><input id="${p}ph" type="tel" placeholder="मोबाइल नंबर (10 अंक)" value="${esc(v.ph)}">`:''}<input id="${p}pin" inputmode="numeric" maxlength="6" placeholder="पिन कोड" value="${esc(v.pin)}" oninput="pinFill('${p}')"><input id="${p}vi" placeholder="गाँव / मोहल्ला" value="${esc(v.vi)}"><input id="${p}ci" placeholder="शहर" value="${esc(v.ci)}"><select id="${p}st">${stOpts(v.st)}</select><input id="${p}di" placeholder="जिला" value="${esc(v.di)}">`;
+async function pinFill(p){const z=$('#'+p+'pin').value.trim();if(!/^\d{6}$/.test(z))return;
+try{const r=await(await fetch('https://api.postalpincode.in/pincode/'+z)).json(),o=r[0]?.PostOffice?.[0];
+if(o){$('#'+p+'st').value=o.State;$('#'+p+'di').value=o.District;if(!$('#'+p+'ci').value)$('#'+p+'ci').value=o.Block&&o.Block!='NA'?o.Block:o.District}}catch(e){}}
+function readAddr(p,m=1){const g=k=>$('#'+p+k)?.value.trim()||'';const a={n:g('n'),ph:g('ph'),pin:g('pin'),vi:g('vi'),ci:g('ci'),st:g('st'),di:g('di')};
+if((m&&(!a.n||!/^\d{10}$/.test(a.ph)))||!/^\d{6}$/.test(a.pin)||!a.ci||!a.st||!a.di){alert('पूरा पता भरें: '+(m?'नाम, 10 अंक का मोबाइल, ':'')+'6 अंक का पिन कोड, शहर, राज्य और जिला');return null}return a}
+const CATS=['कपड़े','जूते-चप्पल','इलेक्ट्रॉनिक्स','घर व किचन','सौंदर्य','बच्चों का सामान','अन्य'];
+const TABS=[['p','⏳ Pending'],['c','❌ Cancel'],['d','🚚 Dispatch'],['e','💰 कमाई'],['m','📦 प्रोडक्ट'],['g','🎁 गिफ्ट कार्ड'],['r','🧾 रसीदें']];
+async function checkBan(){BAN=null;if(!auth.currentUser)return false;
+const d=await db.collection('bans').where('uid','==',auth.currentUser.uid).where('expiryTime','>',firebase.firestore.Timestamp.now()).limit(1).get();
+if(!d.empty){BAN=d.docs[0].data();sheet('🚫 बैन','<div style="color:#dc2626;text-align:center"><b>आप इस ऐप पर बैन हैं</b><p>कारण: '+esc(BAN.reason)+'</p><p>बैन ख़त्म होगा: '+new Date(BAN.expiryTime.toDate()).toLocaleString('hi-IN')+'</p><button onclick="supportUI()">सपोर्ट से संपर्क करें</button></div>');return true}
+return false}
+async function startSession(){const u=auth.currentUser;if(!u||await checkBan())return;
+const d={uid:u.uid,type:'seller',startTime:firebase.firestore.FieldValue.serverTimestamp(),lastActivity:firebase.firestore.FieldValue.serverTimestamp()};
+const r=await db.collection('sessions').add(d);SID=r.id;
+setInterval(()=>{if(SID&&auth.currentUser)db.collection('sessions').doc(SID).update({lastActivity:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})},30000)}
+function endSession(){if(SID)db.collection('sessions').doc(SID).delete().catch(()=>{});SID=null}
+let U=null,S0=null,tab='p',un=[],OR=[],PR=[],RC=[],GC=[],IM=[],SID=null,BAN=null;
+const GS={pending:'⏳ एडमिन की मंजूरी बाकी',active:'✅ चालू',rejected:'❌ एडमिन ने रिजेक्ट किया',disabled:'🚫 बंद कर दिया गया',used:'✅ पूरा इस्तेमाल हो गया'};
+window.addEventListener('beforeunload',endSession);
+const LOG=t=>({t:Date.now(),text:t});
+$('#ra').innerHTML=addrHTML('s',{},0);
+$('#lb').onclick=()=>U?(endSession(),auth.signOut()):login();
+auth.onAuthStateChanged(async u=>{U=u;un.forEach(f=>f());un=[];S0=null;
+['#gate','#reg','#app'].forEach(i=>$(i).hidden=true);$('#lb').textContent=u?'लॉगआउट':'लॉगिन';
+if(!u){endSession();$('#gate').hidden=false;return}
+if(await checkBan()){$('#gate').hidden=false;return}
+startSession();
+try{const d=await db.collection('sellers').doc(u.uid).get();S0=d.exists?d.data():null}catch(e){alert('लोड नहीं हुआ: '+e.message)}
+if(!S0){$('#reg').hidden=false;return}
+$('#app').hidden=false;watch()});
+async function reg(){
+const shop=$('#rsh').value.trim(),mb=$('#rmb').value.trim(),ac=$('#rac').value.trim(),ifsc=$('#rif').value.trim().toUpperCase();
+if(!shop||!/^\d{10}$/.test(mb))return alert('दुकान का नाम और 10 अंक का मोबाइल नंबर भरें');
+const a=readAddr('s',0);if(!a)return;
+if(!/^\d{9,18}$/.test(ac)||!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))return alert('सही A/c नंबर और IFSC कोड भरें');
+const d={uid:U.uid,email:U.email,gname:U.displayName||'',shop,mobile:mb,addr:a,addrText:fmt(a),acc:ac,ifsc,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+try{await db.collection('sellers').doc(U.uid).set(d);S0=d;$('#reg').hidden=true;$('#app').hidden=false;watch()}catch(e){alert('खाता नहीं बना: '+e.message)}}
+function watch(){un.push(
+db.collection('products').where('sellerId','==',U.uid).onSnapshot(s=>{PR=arr(s);draw()}),
+db.collection('orders').where('sellerIds','array-contains',U.uid).onSnapshot(s=>{OR=arr(s);draw()}),
+db.collection('receipts').where('sellerId','==',U.uid).onSnapshot(s=>{RC=arr(s);draw()}),
+db.collection('giftCards').where('sellerId','==',U.uid).onSnapshot(s=>{GC=arr(s);draw()}));draw()}
+const my=o=>o.items.filter(i=>i.sellerId==U.uid);
+const amt=o=>my(o).reduce((a,i)=>a+(i.sp??i.price)*i.qty,0);
+const sum=a=>a.reduce((x,o)=>x+amt(o),0);
+const nm=o=>my(o).map(i=>esc(i.name)+(i.size?' ['+esc(i.size)+']':'')+' ×'+i.qty).join(', ');
+const isP=o=>o.sellerState=='pending'&&o.status!='रद्द',isC=o=>o.status=='रद्द',isD=o=>!isP(o)&&!isC(o)&&o.sellerState!='rejected';
+const oc=(o,x)=>`<div class="box"><b>${nm(o)}</b><span class="tag">${ts(o.createdAt)} · ${rs(amt(o))}</span>${x}</div>`;
+const dc=o=>{const it=my(o)[0]||{},p=PR.find(x=>x.id==it.id)||{};
+return `<div class="box"><div class="row" style="align-items:flex-start"><img class="pv" src="${esc(imgs(p)[0])}" alt=""><span style="flex:1"><b>${esc(it.name)}</b> ×${it.qty}<br><span class="tag">${esc(p.cat)} · रंग: ${esc(p.color||'-')}${it.size?' · साइज़: '+esc(it.size):''}${p.dim?.v?' · आकार: '+esc(p.dim.v)+' '+esc(p.dim.u):''}${p.wt?.v?' · वजन: '+esc(p.wt.v)+' '+esc(p.wt.u):''}</span><br><span>${esc(p.desc)}</span></span></div><b>${rs(amt(o))}</b><span class="tag">ऑर्डर #${o.id.slice(-6).toUpperCase()} · ${ts(o.createdAt)}</span>${tl(o)}${o.awb?`<span class="tag">🚚 AWB: <b>${esc(o.awb)}</b></span>`:''}${o.retStatus?`<span class="tag">↩️ रिटर्न: ${o.retStatus=='requested'?'ग्राहक ने रिटर्न माँगा है':o.retStatus=='pickup'?'सामान वापस पिकअप हो गया, रिफंड बाकी':'✅ रिफंड ग्राहक को भेज दिया गया'}</span>`:''}${o.labelReady?`<button onclick="dl('${o.id}')">⬇️ रसीद डाउनलोड करें</button>`:'<span class="tag">⏳ रसीद एडमिन की तरफ से आनी बाकी है</span>'}</div>`};
+function draw(){if(!U||!S0)return;
+const n={p:OR.filter(isP).length,c:OR.filter(isC).length,d:OR.filter(isD).length};
+$('#tb').innerHTML=TABS.map(([k,t])=>`<button class="${k==tab?'on':''}" onclick="tab='${k}';draw()">${t}${n[k]!=null?' ('+n[k]+')':''}</button>`).join('');
+const E=OR.filter(isD),pd=E.filter(o=>o.payStatus!='paid'),pa=E.filter(o=>o.payStatus=='paid');
+const V={
+p:()=>OR.filter(isP).map(o=>oc(o,`<div class="row"><button class="r" onclick="rej('${o.id}')">❌ अस्वीकार</button><button onclick="acc('${o.id}')">✅ स्वीकार</button></div>`)).join('')||'कोई Pending ऑर्डर नहीं',
+c:()=>OR.filter(isC).map(o=>oc(o,`<b>❌ ${o.cancelledBy=='user'?'ग्राहक ने रद्द किया':o.cancelledBy=='seller'?'आपने रद्द किया':'रद्द हुआ'}</b>`)).join('')||'कोई रद्द ऑर्डर नहीं',
+d:()=>OR.filter(isD).map(dc).join('')||'कोई Dispatch ऑर्डर नहीं',
+e:()=>`<div class="box"><b>⏳ अभी नहीं मिला: ${rs(sum(pd))}</b>${pd.map(o=>`<div class="row"><span>${nm(o)}<br><span class="tag">${esc(o.status)}</span></span><b>${rs(amt(o))}</b></div>`).join('')||'कुछ नहीं'}</div><div class="box"><b>✅ पैसे मिल गए: ${rs(sum(pa))}</b>${pa.map(o=>`<div class="row"><span>${nm(o)}<br><span class="tag">UTR: ${esc(o.utr)}</span></span><b>${rs(amt(o))}</b></div>`).join('')||'कुछ नहीं'}</div>`,
+m:()=>PR.map(p=>`<div class="box"><div class="row"><img class="pv" style="width:56px" src="${esc(imgs(p)[0])}" alt=""><span style="flex:1">${esc(p.name)} — ${rs(p.price)}${p.ratingCount?` · ⭐ ${(p.ratingSum/p.ratingCount).toFixed(1)} (${p.ratingCount})`:''}<br><span class="tag">स्टॉक ${p.stock} · बिका ${p.sold||0} · ${p.public?(p.approved?'🌐 Public (शॉप में लाइव)':'⏳ एडमिन की मंजूरी बाकी'):'🔒 Private'}</span></span></div><div class="row"><input id="add_${p.id}" type="number" placeholder="जितना स्टॉक जोड़ना है"><button class="sm" onclick="addStock('${p.id}')">➕ स्टॉक जोड़ें</button></div><div class="row"><button class="sm" onclick="tgp('${p.id}',${!p.public})">${p.public?'Private करें':'Public करें'}</button><button class="sm r" onclick="delP('${p.id}')">हटाएँ</button></div></div>`).join('')||'अभी कोई प्रोडक्ट नहीं — नीचे + दबाकर जोड़ें',
+r:()=>RC.map(r=>`<div class="box"><b>🧾 डिलीवरी रसीद · ${ts(r.createdAt)}</b><span>${r.items.map(x=>esc(x.name)+' ×'+x.qty).join(', ')}</span><span class="tag">ग्राहक: ${esc(r.customer)}</span><b>${rs(r.amount)}</b></div>`).join('')||'अभी कोई रसीद नहीं आई',
+g:()=>`<div class="box"><b>🎁 गिफ्ट कार्ड के लिए उपलब्ध वॉलेट: ${rs(gcAvail())}</b><span class="tag">यह आपके पेंडिंग पेमेंट (${rs(sum(pd))}) में से निकलता है — गिफ्ट कार्ड बनाते ही उतना पेंडिंग पेमेंट से घट जाएगा</span></div>
+<div class="box col"><b>नया गिफ्ट कार्ड बनाएँ</b><input id="ga" type="number" placeholder="रकम (₹)"><input id="gn" placeholder="जिसे भेजना है — उसका नाम"><input id="gp" type="tel" placeholder="उसका WhatsApp मोबाइल नंबर"><input id="gad" placeholder="उसका पता"><textarea id="gm" rows="2" placeholder="मेसेज (वैकल्पिक)"></textarea><button onclick="gcSend()">एडमिन को मंजूरी के लिए भेजें</button></div>
+${GC.map(g=>`<div class="box"><b>${rs(g.amount)}</b> <span class="tag">${GS[g.status]||g.status}</span>${g.status=='active'||g.status=='used'?`<span class="tag">बाकी बैलेंस: ${rs(g.balance)}</span><div class="row"><code style="flex:1;word-break:break-all">${esc(g.id)}</code><button class="sm" onclick="gcCopy('${g.id}')">📋 कॉपी</button></div>`:''}${g.recipientName?`<span class="tag">भेजा: ${esc(g.recipientName)} · ${esc(g.recipientPhone)}${g.recipientAddress?' · '+esc(g.recipientAddress):''}</span>`:''}${g.status=='rejected'&&g.rejectReason?`<span class="tag">कारण: ${esc(g.rejectReason)}</span>`:''}<span class="tag">${ts(g.createdAt)}</span></div>`).join('')||'अभी कोई गिफ्ट कार्ड नहीं बनाया'}`};
+$('#v').innerHTML=V[tab]()}
+function acc(id){db.collection('orders').doc(id).update({sellerState:'accepted',log:firebase.firestore.FieldValue.arrayUnion(LOG('सेलर ने ऑर्डर स्वीकार किया'))}).catch(e=>alert('नहीं हुआ: '+e.message))}
+async function rej(id){if(!confirm('यह ऑर्डर अस्वीकार करें?'))return;const o=OR.find(x=>x.id==id),r=db.collection('orders').doc(id),u={sellerState:'rejected',status:'रद्द',cancelledBy:'seller',log:firebase.firestore.FieldValue.arrayUnion(LOG('सेलर ने ऑर्डर अस्वीकार किया'))};
+try{const b=db.batch();b.update(r,u);my(o).forEach(i=>b.update(db.collection('products').doc(i.id),{sold:firebase.firestore.FieldValue.increment(-i.qty),lastOrderId:id}));await b.commit()}
+catch(e){try{await r.update(u)}catch(e2){alert(e2.message)}}}
+async function dl(id){try{const d=await db.collection('labels').doc(id).get();if(!d.exists)return alert('रसीद अभी उपलब्ध नहीं है');
+const b=atob(d.data().pdf.split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));a.download='receipt-'+id.slice(-6).toUpperCase()+'.pdf';document.body.appendChild(a);a.click();a.remove()}catch(e){alert('डाउनलोड नहीं हुआ: '+e.message)}}
+function tgp(id,v){db.collection('products').doc(id).update({public:v}).catch(e=>alert(e.message))}
+function gcAvail(){const pd=OR.filter(isD).filter(o=>o.payStatus!='paid'),c=GC.filter(g=>g.status=='pending'||g.status=='active'||g.status=='used').reduce((a,g)=>a+g.amount,0);return Math.max(0,sum(pd)-c)}
+async function gcSend(){const n=+$('#ga').value;if(!n||n<1)return alert('सही रकम डालें');
+const gn=$('#gn').value.trim(),gp=$('#gp').value.trim(),gad=$('#gad').value.trim();
+if(!gn)return alert('जिसे भेजना है उसका नाम डालें');
+if(!gp)return alert('उसका WhatsApp मोबाइल नंबर डालें');
+if(n>gcAvail())return alert('आपके पेंडिंग पेमेंट में इतना बैलेंस नहीं है (उपलब्ध: '+rs(gcAvail())+')');
+const code='GC'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,7).toUpperCase();
+try{await db.collection('giftCards').doc(code).set({amount:n,balance:n,status:'pending',createdBy:'seller',sellerId:U.uid,sellerShop:S0.shop,recipientName:gn,recipientPhone:gp,recipientAddress:gad,message:$('#gm').value.trim(),log:[LOG('सेलर ने गिफ्ट कार्ड बनाया')],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+$('#ga').value='';$('#gn').value='';$('#gp').value='';$('#gad').value='';$('#gm').value='';alert('भेज दिया, एडमिन की मंजूरी का इंतज़ार है ✅')}catch(e){alert('नहीं भेजा: '+e.message)}}
+function gcCopy(code){(navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(()=>alert('कोड कॉपी हो गया ✅')).catch(()=>prompt('इसे कॉपी करें:',code))}
+function addStock(id){const n=+$('#add_'+id).value;if(!n||n<1)return alert('सही मात्रा डालें');
+db.collection('products').doc(id).update({stock:firebase.firestore.FieldValue.increment(n)}).then(()=>{$('#add_'+id).value=''}).catch(e=>alert('नहीं जुड़ा: '+e.message))}
+function delP(id){if(confirm('यह प्रोडक्ट हटाएँ?'))db.collection('products').doc(id).delete()}
+function shut(){$('#sh').style.display='none'}
+function sheet(t,h){$('#shc').innerHTML=`<div class="row"><b>${t}</b><button class="sm" onclick="shut()">✕</button></div>`+h;$('#sh').style.display='block'}
+
+const POLICIES={
+terms:`<b>1. सामान्य</b><p>Short Buy एक ऑनलाइन शॉपिंग प्लेटफ़ॉर्म है जो अलग-अलग स्वतंत्र सेलर को ग्राहकों से जोड़ता है। प्रोडक्ट की गुणवत्ता, विवरण, फोटो और उपलब्धता की पूरी ज़िम्मेदारी संबंधित सेलर की होती है।</p>
+<b>2. ऑर्डर</b><p>सभी ऑर्डर कैश ऑन डिलीवरी (COD) पर लिए जाते हैं, गिफ्ट कार्ड इस्तेमाल करने पर बाकी बची रकम COD में देनी होती है। ऑर्डर सिर्फ़ तभी डिस्पैच होता है जब सेलर उसे स्वीकार करता है — सेलर किसी भी ऑर्डर को बिना कारण बताए अस्वीकार कर सकता है।</p>
+<b>3. कीमत व ऑफ़र</b><p>प्रोडक्ट की कीमतें, स्टॉक और ऑफ़र बिना पूर्व सूचना के बदले जा सकते हैं।</p>
+<b>4. गिफ्ट कार्ड</b><p>गिफ्ट कार्ड सिर्फ़ इसी प्लेटफ़ॉर्म पर शॉपिंग के लिए मान्य है, नकद में नहीं भुनाया जा सकता, और सिर्फ़ एडमिन/सेलर द्वारा ही जारी किया जाता है।</p>
+<b>5. ग्राहक की ज़िम्मेदारी</b><p>ऑर्डर के समय दिया गया पता और मोबाइल नंबर सही होना चाहिए। गलत जानकारी की वजह से डिलीवरी में देरी या असफलता की ज़िम्मेदारी ग्राहक की होगी।</p>
+<b>6. बदलाव का अधिकार</b><p>Short Buy किसी भी समय ये नियम व शर्तें बदलने का अधिकार रखता है।</p>`,
+privacy:`<b>हम क्या जानकारी लेते हैं</b><p>नाम, मोबाइल नंबर, पता, ईमेल और (लागू होने पर) बैंक खाता — सिर्फ़ ऑर्डर डिलीवर करने, रिफंड भेजने और सपोर्ट देने के लिए।</p>
+<b>इस्तेमाल कैसे होता है</b><p>आपकी जानकारी किसी तीसरे पक्ष को बेची नहीं जाती। सेलर को सिर्फ़ उतनी जानकारी दिखती है जितनी उस ऑर्डर की डिलीवरी के लिए ज़रूरी है (नाम, पता, मोबाइल)। बैंक खाते की जानकारी सिर्फ़ रिफंड/पेमेंट भेजने के लिए इस्तेमाल होती है।</p>
+<b>डेटा स्टोरेज</b><p>सारा डेटा Google Firebase पर सुरक्षित रूप से स्टोर होता है।</p>
+<b>आपका अधिकार</b><p>अपना डेटा हटवाने या किसी भी सवाल के लिए नीचे दिए सपोर्ट से संपर्क करें।</p>`,
+refund:`<b>रिटर्न कब मिलेगा</b><p>जिन प्रोडक्ट पर "7 दिन में रिटर्न मिलेगा" लिखा हो, सिर्फ़ उन पर डिलीवरी की तारीख़ से 7 दिन के अंदर रिटर्न रिक्वेस्ट किया जा सकता है, एक बार।</p>
+<b>शर्तें</b><p>प्रोडक्ट बिना इस्तेमाल किए, खराब किए बिना, ओरिजिनल पैकिंग के साथ वापस भेजना ज़रूरी है।</p>
+<b>प्रोसेस</b><p>रिक्वेस्ट के बाद सामान पिकअप होगा, फिर रिफंड आपके दिए गए बैंक खाते में भेजा जाएगा — आमतौर पर पिकअप के 5–7 कार्यदिवस के अंदर।</p>
+<b>गिफ्ट कार्ड</b><p>गिफ्ट कार्ड से इस्तेमाल की गई रकम नकद में रिफंड नहीं होती।</p>
+<b>समस्या?</b><p>रिफंड या रिटर्न से जुड़ी किसी भी समस्या के लिए नीचे दिए सपोर्ट से संपर्क करें।</p>`};
+const SUPPORT_HTML=`<div class="box"><b>🆘 सपोर्ट से संपर्क करें</b><p>हम सिर्फ़ <b>WhatsApp</b> और <b>ईमेल</b> पर ही संपर्क स्वीकार करते हैं (कॉल पर नहीं)।</p>
+<a href="https://wa.me/917566062677" target="_blank" style="text-decoration:none"><button>📱 WhatsApp: 7566062677</button></a>
+<a href="mailto:singhvishvanath69@gmail.com" style="text-decoration:none"><button class="o">📧 ईमेल: singhvishvanath69@gmail.com</button></a></div>
+<div class="box col"><b>📄 नीतियां</b><button class="sm o" onclick="policyUI('terms')">नियम व शर्तें (Terms & Conditions)</button><button class="sm o" onclick="policyUI('privacy')">गोपनीयता नीति (Privacy Policy)</button><button class="sm o" onclick="policyUI('refund')">रिफंड व रिटर्न नीति</button></div>`;
+function supportUI(){sheet('सपोर्ट',SUPPORT_HTML)}
+function policyUI(k){sheet({terms:'नियम व शर्तें',privacy:'गोपनीयता नीति',refund:'रिफंड व रिटर्न नीति'}[k],POLICIES[k]+'<button class="sm o" onclick="supportUI()">← सपोर्ट पर वापस जाएँ</button>')}
+
+const shrink=f=>new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.65))};im.src=r.result};r.readAsDataURL(f)});
+function addUI(){IM=[];$('#shc').innerHTML=`<div class="row"><b>नया सामान जोड़ें</b><button class="sm" onclick="shut()">✕</button></div>
+<input type="file" accept="image/*" multiple onchange="pick(this)"><span class="tag">2 से 5 फोटो चुनें</span><div id="pvs" class="ph"></div>
+<input id="fn" placeholder="सामान का नाम"><select id="fc" onchange="szUI()">${CATS.map(c=>`<option>${c}</option>`).join('')}</select><input id="fd" type="date"><input id="fo" placeholder="रंग (Color)"><div id="szb" class="col"></div><span class="tag">आकार (लंबाई/साइज़) — चाहें तो भरें</span><div class="row"><input id="dv" type="number" step="any" placeholder="आकार"><select id="du" style="width:90px"><option>cm</option><option>m</option></select></div><span class="tag">वजन — चाहें तो भरें (दोनों भर सकते हैं)</span><div class="row"><input id="wv" type="number" step="any" placeholder="वजन"><select id="wu" style="width:90px"><option>g</option><option>kg</option></select></div><textarea id="fv" rows="3" placeholder="विवरण"></textarea><input id="fp" type="number" placeholder="कीमत (₹)"><input id="fq" type="number" placeholder="स्टॉक में मात्रा (Quantity)"><label><input type="checkbox" id="fr"> 7 दिन में रिटर्न मिलेगा</label>
+<button onclick="saveP(true)">🌐 Public करें</button><button class="o" onclick="saveP(false)">🔒 सिर्फ सेव करें (Private)</button>`;$('#sh').style.display='block';szUI()}
+const SZ=['N/A','XS','S','M','L','XL','XXL','3XL','4XL'];
+function szUI(){$('#szb').innerHTML=$('#fc').value=='कपड़े'?`<b>साइज़ चुनें (एक या ज़्यादा)</b><div class="tabs" style="flex-wrap:wrap">${SZ.map(z=>`<label class="box" style="flex-direction:row;padding:6px 10px"><input type="checkbox" class="zs" value="${z}"> ${z}</label>`).join('')}</div>`:''}
+async function pick(el){const f=[...el.files];IM=await Promise.all(f.slice(0,5).map(shrink));$('#pvs').innerHTML=IM.map(s=>`<img src="${s}" alt="">`).join('');if(f.length>5)alert('सिर्फ पहली 5 फोटो ली गईं')}
+async function saveP(pub){const v=i=>$(i).value.trim();
+if(IM.length<2)return alert('कम से कम 2 फोटो (अधिकतम 5) चुनें');
+if(!v('#fn')||!v('#fp')||!v('#fq'))return alert('नाम, कीमत और मात्रा भरें');
+if($('#fc').value=='कपड़े'&&!document.querySelectorAll('.zs:checked').length)return alert('कम से कम एक साइज़ चुनें (या N/A)');
+try{await db.collection('products').add({name:v('#fn'),cat:$('#fc').value,date:v('#fd'),color:v('#fo'),sizes:[...document.querySelectorAll('.zs:checked')].map(x=>x.value),dim:{v:+v('#dv')||0,u:$('#du').value},wt:{v:+v('#wv')||0,u:$('#wu').value},sold:0,desc:v('#fv'),price:+v('#fp'),stock:+v('#fq'),ret7:$('#fr').checked,imgs:IM,img:IM[0],public:pub,salePrice:+v('#fp'),priceSet:false,approved:false,sellerId:U.uid,sellerName:S0.shop,retAddr:S0.addrText,createdAt:firebase.firestore.FieldValue.serverTimestamp()});shut();tab='m';draw()}catch(e){alert('नहीं जुड़ा: '+e.message)}}
+</script></body></html>
